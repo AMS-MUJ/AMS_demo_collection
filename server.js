@@ -1,6 +1,6 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
 require('dotenv').config();
 
 const app = express();
@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
 // Routes
-const submissionsRoute = require('./routes/submissions');
+import submissionsRoute from './routes/submissions.js';
 app.use('/api/submissions', submissionsRoute);
 
 // Default route (optional)

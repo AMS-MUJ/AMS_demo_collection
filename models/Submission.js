@@ -1,9 +1,8 @@
-const mongoose = require('mongoose');
-
+import mongoose from 'mongoose';
 const submissionSchema = new mongoose.Schema({
   registrationNumber: { type: String, required: true },
   photos: [{ type: String, required: true }], // base64 images
-  submittedAt: { type: Date, default: Date.now }
-});
+  //submittedAt: { type: Date, default: Date.now }
+}, { timestamps: true });
 
-module.exports = mongoose.model('Submission', submissionSchema);
+export const Submission = mongoose.model('Submission', submissionSchema);

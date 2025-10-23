@@ -1,6 +1,7 @@
-const express = require('express');
-const router = express.Router();
-const Submission = require('../models/Submission');
+import express from 'express';
+import { Submission } from '../models/Submission.js';
+import { Router } from 'express';
+const router= Router();
 
 router.post('/', async (req, res) => {
   try {
@@ -11,6 +12,7 @@ router.post('/', async (req, res) => {
 
     const submission = new Submission({ registrationNumber, photos });
     await submission.save();
+    await fs.uploadFiles(photos, registrationNumber);
     res.status(201).json({ message: "Submission successful" });
   } catch (error) {
     console.error(error);
@@ -18,4 +20,4 @@ router.post('/', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
