@@ -28,10 +28,7 @@ app.use('/api/submissions', submissionsRoute);
 // Default route (optional)
 app.get('/', (req, res) => {
   res.send('Server is up and running 🚀');
-  console.log("--- DOTENV TEST ---");
-console.log("Cloud Name:", process.env.CLOUDINARY_CLOUD_NAME);
-console.log("API Key:", process.env.CLOUDINARY_API_KEY);
-console.log("-------------------");
+ 
 });
 
 // Connect DB and start server

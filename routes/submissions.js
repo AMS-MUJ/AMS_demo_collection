@@ -46,7 +46,7 @@ router.post("/", upload.any("photos", 3), async (req, res) => {
 
     // <-- NEW: Step 1 - Create an array of upload promises
     const uploadPromises = req.files.map(file => 
-      uploadOnCloudinary(file.path) // 'file.path' is the localFilePath
+      uploadOnCloudinary(file.path,registrationNumber) // 'file.path' is the localFilePath
     );
 
     // <-- NEW: Step 2 - Wait for all uploads to complete
