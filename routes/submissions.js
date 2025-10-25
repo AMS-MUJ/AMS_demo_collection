@@ -32,7 +32,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // --- MODIFIED ROUTE HANDLER ---
-router.post("/", upload.array("photos", 3), async (req, res) => {
+router.post("/", upload.any("photos", 3), async (req, res) => {
   try {
     console.log("Request body:", req.body);
     console.log("Uploaded files:", req.files); // These are the temporary local files

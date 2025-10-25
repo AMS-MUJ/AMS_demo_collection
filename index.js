@@ -1,10 +1,10 @@
 import express from 'express';
+import dotenv from 'dotenv';
+dotenv.config();
 import mongoose from 'mongoose';
 import cors from 'cors';
-import dotenv from 'dotenv';
 //import multer from 'multer';
-dotenv.config();
-
+import { uploadOnCloudinary } from './utils/cloudinary.js';
 const app = express();
 
 const allowedOrigins = ["https://amsdatacollection1.netlify.app"];
@@ -28,6 +28,10 @@ app.use('/api/submissions', submissionsRoute);
 // Default route (optional)
 app.get('/', (req, res) => {
   res.send('Server is up and running 🚀');
+  console.log("--- DOTENV TEST ---");
+console.log("Cloud Name:", process.env.CLOUDINARY_CLOUD_NAME);
+console.log("API Key:", process.env.CLOUDINARY_API_KEY);
+console.log("-------------------");
 });
 
 // Connect DB and start server
