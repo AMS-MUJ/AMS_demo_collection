@@ -7,6 +7,7 @@ const PhotoSubmission = () => {
   const [photos, setPhotos] = useState([null, null, null]);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const allPhotosSelected = photos.every((p) => p);
   const isSuccess = message.includes("✅");
@@ -45,14 +46,20 @@ const PhotoSubmission = () => {
     }
 
     try {
+      setIsSubmitting(true); // show loading message
+      setMessage("⏳ Submitting response...");
+
       const formData = new FormData();
       formData.append("registrationNumber", registrationNumber);
       photos.forEach((photo) => formData.append("photos", photo));
 
-      const res = await axios.post("https://ams-demo-collection-1-undw.onrender.com/api/submissions", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
+      const res = await axios.post(
+        "https://ams-demo-collection-1-undw.onrender.com/api/submissions",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
 
       if (res.status === 200 || res.status === 201) {
         setMessage("✅ Submitted successfully!");
@@ -62,6 +69,8 @@ const PhotoSubmission = () => {
     } catch (err) {
       console.error(err);
       setMessage("❌ Submission failed");
+    } finally {
+      setIsSubmitting(false); // hide loading
     }
   };
 
@@ -155,10 +164,10 @@ const PhotoSubmission = () => {
           {/* Submit Button */}
           <button
             onClick={handleSubmit}
-            disabled={!allPhotosSelected || !registrationNumber}
+            disabled={isSubmitting || !allPhotosSelected || !registrationNumber}
             className="w-full bg-linear-to-r from-blue-500 via-blue-400 to-blue-300 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Submit Application
+            {isSubmitting ? "Submitting..." : "Submit Application"}
           </button>
 
           {/* Message */}
