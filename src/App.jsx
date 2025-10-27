@@ -1,192 +1,242 @@
-import React, { useState } from "react";
-import { Camera, CheckCircle2, XCircle, Upload, User, Trash2 } from "lucide-react";
-import axios from "axios";
+import { useState } from 'react';
+import { Camera, Trash2, CheckCircle, AlertCircle, Upload } from 'lucide-react';
+import axios from 'axios';
 
-const PhotoSubmission = () => {
-  const [registrationNumber, setRegistrationNumber] = useState("");
+function App() {
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
+      <div className="max-w-md mx-auto">
+        <h1 className="text-3xl font-bold text-center mb-8 text-gray-800 dark:text-white">
+          AMS Photo Submission
+        </h1>
+        <PhotoSubmission />
+      </div>
+    </div>
+  );
+}
+
+function PhotoSubmission() {
+  const [registrationNumber, setRegistrationNumber] = useState('');
+  // NEW: States for academic details
+  const [name, setName] = useState('');
+  const [section, setSection] = useState('');
+  const [academicYear, setAcademicYear] = useState('');
   const [photos, setPhotos] = useState([null, null, null]);
-  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-  const [message, setMessage] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const allPhotosSelected = photos.every((p) => p);
-  const isSuccess = message.includes("✅");
-  const isError = message.includes("❌");
+  // NEW: Helper to check if academic details + reg number are complete
+  const isAcademicComplete = !!(name && section && academicYear && registrationNumber);
 
-  const handleCapture = (e, index) => {
+  const handlePhotoCapture = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
-
-    const updatedPhotos = [...photos];
-    updatedPhotos[index] = file;
-    setPhotos(updatedPhotos);
-
-    // Update current index if needed
-    const nextIndex = updatedPhotos.findIndex((p) => !p);
-    setCurrentPhotoIndex(nextIndex === -1 ? 3 : nextIndex);
+    if (file && currentIndex < 3) {
+      const newPhotos = [...photos];
+      newPhotos[currentIndex] = file;
+      setPhotos(newPhotos);
+      setCurrentIndex(currentIndex + 1);
+      setMessage(`✅ Photo ${currentIndex + 1} captured!`);
+      e.target.value = ''; // Reset input
+    }
   };
 
-  const handleRemovePhoto = (index) => {
-    const updatedPhotos = [...photos];
-    updatedPhotos[index] = null;
-    setPhotos(updatedPhotos);
-
-    if (index < currentPhotoIndex) setCurrentPhotoIndex(index);
-    else if (currentPhotoIndex === 3) setCurrentPhotoIndex(index);
+  const removePhoto = (index) => {
+    const newPhotos = [...photos];
+    newPhotos[index] = null;
+    setPhotos(newPhotos);
+    if (currentIndex > index) {
+      setCurrentIndex(index);
+    }
+    setMessage('');
   };
 
+  // UPDATED: Extended validation for academic details
   const handleSubmit = async () => {
-    if (!registrationNumber) {
-      setMessage("❌ Please enter your registration number");
+    if (!isAcademicComplete || photos.some(p => !p)) {
+      setMessage("❌ Please fill all academic details, registration number, and capture all 3 photos");
       return;
     }
-    if (photos.some((p) => !p)) {
-      setMessage("❌ Please capture all 3 photos");
-      return;
-    }
-
     try {
-      setIsSubmitting(true); // show loading message
-      setMessage("⏳ Submitting response...");
-
+      setIsSubmitting(true);
+      setMessage("⏳ Submitting...");
       const formData = new FormData();
+      // NEW: Append academic details to form data
+      formData.append("name", name);
+      formData.append("section", section);
+      formData.append("academicYear", academicYear);
       formData.append("registrationNumber", registrationNumber);
-      photos.forEach((photo) => formData.append("photos", photo));
-
-      const res = await axios.post(
-        "https://ams-demo-collection-1-undw.onrender.com/api/submissions",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
-
+      photos.forEach(photo => formData.append("photos", photo));
+      const res = await axios.post("https://ams-demo-collection-1-undw.onrender.com/api/submissions", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
       if (res.status === 200 || res.status === 201) {
         setMessage("✅ Submitted successfully!");
+        // NEW: Reset form on success
+        setName(''); setSection(''); setAcademicYear(''); setRegistrationNumber('');
+        setPhotos([null, null, null]); setCurrentIndex(0);
       } else {
         setMessage("❌ Submission failed");
       }
     } catch (err) {
-      console.error(err);
       setMessage("❌ Submission failed");
     } finally {
-      setIsSubmitting(false); // hide loading
+      setIsSubmitting(false);
     }
   };
 
-
   return (
-    <div className="min-h-screen bg-linear-to-br from-background via-secondary/30 to-background flex items-center justify-center p-4 animate-fade-in">
-      <div className="w-full max-w-2xl animate-slide-up">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-linear-to-br from-blue-500 to-white mb-4 shadow-lg">
-            <Camera className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-blue-600 mb-2">Manipal University</h1>
-          <p className="text-gray-500 text-lg">Photo Submission Portal</p>
-        </div>
-
-        {/* Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-8 md:p-10">
-          {/* Registration Input */}
-          <div className="mb-8">
-            <label className=" text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-              <User className="w-4 h-4 text-blue-500" /> Registration Number
-            </label>
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 space-y-6">
+      {/* NEW: Academic Details Section */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold text-gray-800 dark:text-white flex items-center">
+          <Upload className="w-5 h-5 mr-2" />
+          Academic Details
+        </h2>
+        <div className="grid grid-cols-1 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Name</label>
             <input
               type="text"
-              placeholder="Enter your registration number"
-              value={registrationNumber}
-              onChange={(e) => setRegistrationNumber(e.target.value)}
-              className="w-full px-4 py-3.5 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 text-gray-700 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+              placeholder="Enter your full name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              required
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Section</label>
+            <input
+              type="text"
+              placeholder="e.g., A or Section A"
+              value={section}
+              onChange={(e) => setSection(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Academic Year</label>
+            <input
+              type="text"
+              placeholder="e.g., 2024-2025"
+              value={academicYear}
+              onChange={(e) => setAcademicYear(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Registration Number</label>
+            <input
+              type="text"
+              placeholder="Enter your reg number"
+              value={registrationNumber}
+              onChange={(e) => setRegistrationNumber(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              required
+            />
+          </div>
+        </div>
+      </div>
 
-          {/* Photo Capture */}
-          {currentPhotoIndex < 3 ? (
-            <div className="mb-8">
-              <div className="bg-blue-50 border-2 border-dashed border-blue-300 rounded-2xl p-8 text-center hover:border-blue-400 transition-all duration-300">
-                <Camera className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-                <p className="text-gray-700 font-semibold mb-2 text-lg">
-                  Capture Photo {currentPhotoIndex + 1} of 3
-                </p>
-                <p className="text-gray-400 text-sm mb-6">
-                  Position yourself clearly in frame
-                </p>
-                <label className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-blue-500 to-blue-300 text-white rounded-xl font-semibold cursor-pointer hover:scale-105 transition-all duration-300">
-                  <Upload className="w-5 h-5" /> Choose Image
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    onChange={(e) => handleCapture(e, currentPhotoIndex)}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-            </div>
-          ) : (
-            <div className="mb-8 bg-green-50 border-2 border-green-300 rounded-2xl p-6 text-center">
-              <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-3" />
-              <p className="text-green-600 font-semibold text-lg">All 3 photos captured!</p>
-              <p className="text-gray-400 text-sm mt-2">Ready to submit</p>
-            </div>
-          )}
+      {/* Photo Capture Section */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold text-gray-800 dark:text-white flex items-center">
+          <Camera className="w-5 h-5 mr-2" />
+          Photo Upload ({currentIndex}/3)
+        </h2>
+        
+        {/* UPDATED: Disabled state for Capture button + message */}
+        {!isAcademicComplete && (
+          <div className="p-3 bg-yellow-100 dark:bg-yellow-900 border border-yellow-300 dark:border-yellow-700 rounded-lg text-yellow-800 dark:text-yellow-200">
+            <AlertCircle className="w-5 h-5 inline mr-2" />
+            Please complete all academic details above to start capturing photos.
+          </div>
+        )}
+
+        <div className="flex flex-col items-center space-y-4">
+          <label
+            htmlFor="photo-capture"
+            className={`flex items-center justify-center w-full px-4 py-3.5 border-2 rounded-xl cursor-pointer transition-colors ${
+              isAcademicComplete
+                ? 'border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                : 'border-dashed border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-500 cursor-not-allowed'
+            }`}
+          >
+            <Camera className="w-6 h-6 mr-2" />
+            {isAcademicComplete ? `Capture Photo ${currentIndex + 1} of 3` : 'Complete details to capture'}
+            <input
+              id="photo-capture"
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoCapture}
+              disabled={!isAcademicComplete}
+              className="hidden"
+            />
+          </label>
 
           {/* Photo Previews */}
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-3 gap-2 w-full">
             {photos.map((photo, index) => (
-              <div
-                key={index}
-                className="relative aspect-square rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 transition-all duration-300 hover:scale-105"
-              >
+              <div key={index} className="relative">
                 {photo ? (
                   <>
-                    <img src={URL.createObjectURL(photo)} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+                    <img
+                      src={URL.createObjectURL(photo)}
+                      alt={`Photo ${index + 1}`}
+                      className="w-full h-20 object-cover rounded"
+                    />
                     <button
-                      onClick={() => handleRemovePhoto(index)}
-                      className="absolute top-1 right-1 bg-red-500 rounded-full p-1 text-white hover:bg-red-600 transition"
+                      onClick={() => removePhoto(index)}
+                      className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3 h-3" />
                     </button>
                   </>
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
-                    <Camera className="w-8 h-8 mb-2" />
+                  <div className="w-full h-20 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center text-gray-500">
                     {index + 1}
                   </div>
                 )}
               </div>
             ))}
           </div>
+        </div>
 
-          {/* Submit Button */}
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting || !allPhotosSelected || !registrationNumber}
-            className="w-full bg-linear-to-r from-blue-500 via-blue-400 to-blue-300 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? "Submitting..." : "Submit Application"}
-          </button>
-
-          {/* Message */}
-          {message && (
-            <div className={`mt-6 p-4 rounded-xl flex items-center gap-3 ${isSuccess ? "bg-green-50 border-green-300 text-green-600" : isError ? "bg-red-50 border-red-300 text-red-600" : "bg-gray-50 border-gray-200 text-gray-700"}`}>
-              {isSuccess && <CheckCircle2 className="w-5 h-5 shrink-0" />}
-              {isError && <XCircle className="w-5 h-5" />}
-              <p className="font-medium">{message}</p>
-            </div>
+        {/* UPDATED: Button text reflects completeness */}
+        <button
+          onClick={handleSubmit}
+          disabled={isSubmitting || !isAcademicComplete || photos.some(p => !p)}
+          className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg flex items-center justify-center space-x-2 transition-colors disabled:cursor-not-allowed"
+        >
+          {isSubmitting ? (
+            <>
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              Submitting...
+            </>
+          ) : (
+            <>
+              <CheckCircle className="w-5 h-5" />
+              Submit All
+            </>
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-8 text-gray-400 text-sm">
-          <p>Powered by Manipal University Digital Services</p>
-        </div>
+        </button>
       </div>
+
+      {/* Message Display */}
+      {message && (
+        <div className={`p-3 rounded-lg text-center font-medium ${
+          message.includes('✅') ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' :
+          message.includes('❌') ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' :
+          'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+        }`}>
+          {message}
+        </div>
+      )}
     </div>
   );
-};
+}
 
-export default PhotoSubmission;
+export default App;
