@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Camera, Trash2, CheckCircle, AlertCircle, Upload } from 'lucide-react';
 import axios from 'axios';
@@ -18,7 +17,6 @@ function App() {
 
 function PhotoSubmission() {
   const [registrationNumber, setRegistrationNumber] = useState('');
-  // NEW: States for academic details
   const [name, setName] = useState('');
   const [section, setSection] = useState('');
   const [academicYear, setAcademicYear] = useState('');
@@ -26,8 +24,8 @@ function PhotoSubmission() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false); // ✅ success screen trigger
 
-  // NEW: Helper to check if academic details + reg number are complete
   const isAcademicComplete = !!(name && section && academicYear && registrationNumber);
 
   const handlePhotoCapture = (e) => {
@@ -38,7 +36,7 @@ function PhotoSubmission() {
       setPhotos(newPhotos);
       setCurrentIndex(currentIndex + 1);
       setMessage(`✅ Photo ${currentIndex + 1} captured!`);
-      e.target.value = ''; // Reset input
+      e.target.value = '';
     }
   };
 
@@ -46,49 +44,63 @@ function PhotoSubmission() {
     const newPhotos = [...photos];
     newPhotos[index] = null;
     setPhotos(newPhotos);
-    if (currentIndex > index) {
-      setCurrentIndex(index);
-    }
+    if (currentIndex > index) setCurrentIndex(index);
     setMessage('');
   };
 
-  // UPDATED: Extended validation for academic details
   const handleSubmit = async () => {
-    if (!isAcademicComplete || photos.some(p => !p)) {
-      setMessage("❌ Please fill all academic details, registration number, and capture all 3 photos");
+    if (isSubmitting) return;
+    if (!isAcademicComplete || photos.some((p) => !p)) {
+      setMessage('⚠️ Please fill all academic details, registration number, and capture all 3 photos');
       return;
     }
+
     try {
       setIsSubmitting(true);
-      setMessage("");
+
       const formData = new FormData();
-      // NEW: Append academic details to form data
-      formData.append("name", name);
-      formData.append("section", section);
-      formData.append("academicYear", academicYear);
-      formData.append("registrationNumber", registrationNumber);
-      photos.forEach(photo => formData.append("photos", photo));
-      const res = await axios.post("https://ams-demo-collection-1-undw.onrender.com/api/submissions", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
+      formData.append('name', name);
+      formData.append('section', section);
+      formData.append('academicYear', academicYear);
+      formData.append('registrationNumber', registrationNumber);
+      photos.forEach((photo) => formData.append('photos', photo));
+
+      const res = await axios.post(
+        'https://ams-demo-collection-1-undw.onrender.com/api/submissions',
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+
       if (res.status === 200 || res.status === 201) {
-        setMessage("✅ Submitted successfully!");
-        // NEW: Reset form on success
-        setName(''); setSection(''); setAcademicYear(''); setRegistrationNumber('');
-        setPhotos([null, null, null]); setCurrentIndex(0);
+        setIsSubmitted(true); // ✅ show success screen
       } else {
-        setMessage("❌ Submission failed");
+        setMessage('❌ Submission failed');
       }
     } catch (err) {
-      setMessage("❌ Submission failed");
+      setMessage('❌ Submission failed');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Success screen after successful submission
+  if (isSubmitted) {
+    return (
+      <div className="flex flex-col items-center justify-center text-center space-y-4 py-10">
+        <div className="bg-green-100 dark:bg-green-900 p-6 rounded-full">
+          <CheckCircle className="w-12 h-12 text-green-600 dark:text-green-400" />
+        </div>
+        <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
+          Thank You!
+        </h2>
+        <h3 className='text-xl font-semibold text-gray-800 dark:text-white'>Your photos and details have been submitted successfully. We appreciate your participation</h3>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 space-y-6">
-      {/* NEW: Academic Details Section */}
+      {/* Academic Details Section */}
       <div className="space-y-4">
         <h2 className="text-xl font-semibold text-gray-800 dark:text-white flex items-center">
           <Upload className="w-5 h-5 mr-2" />
@@ -96,46 +108,66 @@ function PhotoSubmission() {
         </h2>
         <div className="grid grid-cols-1 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Name</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Full Name
+            </label>
             <input
               type="text"
               placeholder="Enter your full name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+              focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
               required
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Section</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Section
+            </label>
             <input
               type="text"
               placeholder="e.g., A or Section A"
               value={section}
               onChange={(e) => setSection(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+              focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
               required
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Academic Year</label>
-            <input
-              type="text"
-              placeholder="e.g., 2024-2025"
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Academic Year
+            </label>
+            <select
               value={academicYear}
               onChange={(e) => setAcademicYear(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+    focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
               required
-            />
+            >
+              <option value="">Select Year</option>
+              <option value="1">1st Year</option>
+              <option value="2">2nd Year</option>
+              <option value="3">3rd Year</option>
+              <option value="4">4th Year</option>
+            </select>
           </div>
+
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Registration Number</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Registration Number
+            </label>
             <input
               type="text"
               placeholder="Enter your reg number"
               value={registrationNumber}
               onChange={(e) => setRegistrationNumber(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+              focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
               required
             />
           </div>
@@ -148,10 +180,10 @@ function PhotoSubmission() {
           <Camera className="w-5 h-5 mr-2" />
           Photo Upload ({currentIndex}/3)
         </h2>
-        
-        {/* UPDATED: Disabled state for Capture button + message */}
+
         {!isAcademicComplete && (
-          <div className="p-3 bg-yellow-100 dark:bg-yellow-900 border border-yellow-300 dark:border-yellow-700 rounded-lg text-yellow-800 dark:text-yellow-200">
+          <div className="p-3 bg-yellow-100 dark:bg-yellow-900 border border-yellow-300 
+          dark:border-yellow-700 rounded-lg text-yellow-800 dark:text-yellow-200">
             <AlertCircle className="w-5 h-5 inline mr-2" />
             Please complete all academic details above to start capturing photos.
           </div>
@@ -160,11 +192,10 @@ function PhotoSubmission() {
         <div className="flex flex-col items-center space-y-4">
           <label
             htmlFor="photo-capture"
-            className={`flex items-center justify-center w-full px-4 py-3.5 border-2 rounded-xl cursor-pointer transition-colors ${
-              isAcademicComplete
+            className={`flex items-center justify-center w-full px-4 py-3.5 border-2 rounded-xl cursor-pointer transition-colors ${isAcademicComplete
                 ? 'border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
                 : 'border-dashed border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-500 cursor-not-allowed'
-            }`}
+              }`}
           >
             <Camera className="w-6 h-6 mr-2" />
             {isAcademicComplete ? `Capture Photo ${currentIndex + 1} of 3` : 'Complete details to capture'}
@@ -206,11 +237,12 @@ function PhotoSubmission() {
           </div>
         </div>
 
-        {/* UPDATED: Button text reflects completeness */}
+        {/* Submit Button */}
         <button
           onClick={handleSubmit}
-          disabled={isSubmitting || !isAcademicComplete || photos.some(p => !p)}
-          className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg flex items-center justify-center space-x-2 transition-colors disabled:cursor-not-allowed"
+          disabled={isSubmitting || !isAcademicComplete || photos.some((p) => !p)}
+          className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold 
+          rounded-lg flex items-center justify-center space-x-2 transition-colors disabled:cursor-not-allowed"
         >
           {isSubmitting ? (
             <>
@@ -228,11 +260,14 @@ function PhotoSubmission() {
 
       {/* Message Display */}
       {message && (
-        <div className={`p-3 rounded-lg text-center font-medium ${
-          message.includes('✅') ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' :
-          message.includes('❌') ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' :
-          'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
-        }`}>
+        <div
+          className={`p-3 rounded-lg text-center font-medium ${message.includes('✅')
+              ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+              : message.includes('❌')
+                ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+                : 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+            }`}
+        >
           {message}
         </div>
       )}

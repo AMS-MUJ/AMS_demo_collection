@@ -64,8 +64,8 @@ export default function SubmissionForm() {
           <label>Upload 3 Photos:</label>
           <input
             type="file"
-            multiple
             accept="image/*"
+            capture="environment"
             onChange={handleFilesChange}
             required
           />
