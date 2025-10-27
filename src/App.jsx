@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Camera, Trash2, CheckCircle, AlertCircle, Upload } from 'lucide-react';
 import axios from 'axios';
@@ -59,7 +60,7 @@ function PhotoSubmission() {
     }
     try {
       setIsSubmitting(true);
-      setMessage("⏳ Submitting...");
+      setMessage("");
       const formData = new FormData();
       // NEW: Append academic details to form data
       formData.append("name", name);
