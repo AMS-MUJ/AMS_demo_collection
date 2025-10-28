@@ -37,7 +37,7 @@ router.post("/", upload.any("photos", 3), async (req, res) => {
     console.log("Request body:", req.body);
     console.log("Uploaded files:", req.files); // These are the temporary local files
 
-    const { registrationNumber } = req.body;
+    const { registrationNumber,Section ,Year} = req.body;
     if (!registrationNumber || !req.files || req.files.length < 3) {
       return res
         .status(400)
@@ -64,7 +64,9 @@ router.post("/", upload.any("photos", 3), async (req, res) => {
     // <-- MODIFIED: Step 5 - Save the Cloudinary URLs to the database
     const submission = new Submission({ 
       registrationNumber, 
-      photos: photoUrls // Save the array of URLs
+      photos: photoUrls,
+      Section,
+      Year // Save the array of URLs
     });
     await submission.save();
 
