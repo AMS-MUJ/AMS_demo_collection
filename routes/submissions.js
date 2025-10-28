@@ -37,7 +37,7 @@ router.post("/", upload.any("photos", 3), async (req, res) => {
     console.log("Request body:", req.body);
     console.log("Uploaded files:", req.files); // These are the temporary local files
 
-    const { registrationNumber,Section ,Year} = req.body;
+    const { registrationNumber,Section ,Year,name} = req.body;
     if (!registrationNumber || !req.files || req.files.length < 3) {
       return res
         .status(400)
@@ -66,7 +66,9 @@ router.post("/", upload.any("photos", 3), async (req, res) => {
       registrationNumber, 
       photos: photoUrls,
       Section,
-      Year // Save the array of URLs
+      Year,
+      name,
+       // Save the array of URLs
     });
     await submission.save();
 
