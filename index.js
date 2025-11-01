@@ -1,6 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import KeepAliveService from '../AMS_demo_collection/utils/keepServerAlive.js';
+import KeepAliveService from './utils/keepServerAlive.js';
 dotenv.config();
 import mongoose from 'mongoose';
 import cors from 'cors';
