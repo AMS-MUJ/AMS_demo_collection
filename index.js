@@ -1,5 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import KeepAliveService from '../AMS_demo_collection/utils/keepServerAlive.js';
 dotenv.config();
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -17,6 +18,14 @@ app.use(
     credentials: true, // optional if you send cookies
   })
 );
+const deployedUrl = process.env.DEPLOYED_URL; // e.g., 'https://your-app-name.onrender.com'
+ 
+ if (deployedUrl) {
+  const keepAlive = new KeepAliveService(deployedUrl, 14); // Ping every 14 minutes
+  keepAlive.start();
+  } else if (process.env.ENABLE_KEEP_ALIVE === 'true') {
+        console.warn("KeepAliveService: ENABLE_KEEP_ALIVE is true, but no DEPLOYED_URL was provided.");
+    }
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
