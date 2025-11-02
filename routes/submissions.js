@@ -112,7 +112,7 @@ router.post("/", upload.any("photos", 3), async (req, res) => {
         const unlinkPromises = req.files.map(file => fs.promises.unlink(file.path));
         
         // Wait for all files to be deleted
-        await Promise.all(unlinkPromises);
+        await Promise.allSettled(unlinkPromises);
         console.log("Temporary files deleted successfully.");
 
         // After deleting files, try to remove the user's temp directory
