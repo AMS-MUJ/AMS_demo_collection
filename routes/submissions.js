@@ -1,25 +1,24 @@
 import express from "express";
 import path from "path";
-import fs from "fs"; // <-- Make sure 'fs' is imported with promise support
-import { Submission } from "../models/Submission.js";
+import fs from "fs";
 import multer from "multer";
+import ExcelJS from "exceljs"; // <-- 📦 For Excel export
+import { Submission } from "../models/Submission.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 const router = express.Router();
 
-// Configure multer storage
+// ============================
+// 📁 MULTER STORAGE CONFIG
+// ============================
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const regNo = req.body.registrationNumber;
     if (!regNo) {
-      // Multer won't have req.body *before* parsing, 
-      // but this check is good. Let's rely on the handler's check.
-      // We'll create a generic temp path first.
       const tempPath = path.join("public", "temp");
       fs.mkdirSync(tempPath, { recursive: true });
       cb(null, tempPath);
     } else {
-      // If regNo is available (e.g., not a file field)
       const uploadPath = path.join("public", "temp", regNo);
       fs.mkdirSync(uploadPath, { recursive: true });
       cb(null, uploadPath);
@@ -33,55 +32,44 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// --- MODIFIED ROUTE HANDLER ---
+// ============================
+// 📨 POST: SUBMISSION UPLOAD
+// ============================
 router.post("/", upload.any("photos", 3), async (req, res) => {
-  // Get the path to the user's temp directory for cleanup
   const userTempDir = req.files.length > 0 ? path.dirname(req.files[0].path) : null;
 
   try {
     console.log("Request body:", req.body);
-    console.log("Uploaded files:", req.files); 
+    console.log("Uploaded files:", req.files);
 
     const { registrationNumber, Section, Year, name } = req.body;
+
     if (!registrationNumber) {
-      return res
-        .status(400)
-        .json({ message: "Registration number is required" });
+      return res.status(400).json({ message: "Registration number is required" });
     }
 
-    // --- ⬇️ HERE IS YOUR CHECK ⬇️ ---
-    // Step 1: Check if the user already exists
     const existingSubmission = await Submission.findOne({ registrationNumber });
-
-    // Step 2: If they exist, reject the request
     if (existingSubmission) {
       console.log(`Rejected: Registration number ${registrationNumber} already exists.`);
-      // 409 Conflict is the correct HTTP status code for this
       return res.status(409).json({
         message: "This registration number has already submitted.",
       });
     }
-    // --- ⬆️ END OF CHECK ⬆️ ---
 
-    // Step 3: If not, proceed. Check for required files.
     if (!req.files || req.files.length < 3) {
-      return res
-        .status(400)
-        .json({ message: "At least 3 photos are required" });
+      return res.status(400).json({ message: "At least 3 photos are required" });
     }
 
-    // Step 4: Upload to Cloudinary
+    // Upload images to Cloudinary
     const uploadPromises = req.files.map(file =>
-      uploadOnCloudinary(file.path, registrationNumber) 
+      uploadOnCloudinary(file.path, registrationNumber)
     );
     const uploadResults = await Promise.all(uploadPromises);
 
-    // Step 5: Check for Cloudinary failures
     if (uploadResults.some(result => result === null)) {
       return res.status(500).json({ message: "Failed to upload one or more images to Cloudinary" });
     }
 
-    // Step 6: Get URLs and save new submission to DB
     const photoUrls = uploadResults.map(result => result.secure_url);
     const submission = new Submission({
       registrationNumber,
@@ -90,9 +78,9 @@ router.post("/", upload.any("photos", 3), async (req, res) => {
       Year,
       name,
     });
+
     await submission.save();
 
-    // Step 7: Send success response
     res.status(201).json({
       message: "✅ Submission successful",
       photos: photoUrls,
@@ -102,20 +90,13 @@ router.post("/", upload.any("photos", 3), async (req, res) => {
     console.error("Server error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   } finally {
-    // --- ⬇️ CRITICAL CLEANUP STEP ⬇️ ---
-    // This block runs *no matter what* (success, failure, or rejection)
-    // It deletes the temporary files from your server.
+    // 🧹 Cleanup temporary files
     if (req.files && req.files.length > 0) {
       console.log("Cleaning up temporary files...");
       try {
-        // Create an array of promises for file deletions
         const unlinkPromises = req.files.map(file => fs.promises.unlink(file.path));
-        
-        // Wait for all files to be deleted
         await Promise.allSettled(unlinkPromises);
-        console.log("Temporary files deleted successfully.");
 
-        // After deleting files, try to remove the user's temp directory
         if (userTempDir && fs.existsSync(userTempDir)) {
           await fs.promises.rmdir(userTempDir);
           console.log(`Temporary directory ${userTempDir} deleted.`);
@@ -127,20 +108,70 @@ router.post("/", upload.any("photos", 3), async (req, res) => {
   }
 });
 
-
-// --- ⬇️ FIXED GET ROUTE ⬇️ ---
-// I moved this *outside* the POST handler and fixed the path.
-// This route is for a frontend to check if a user *can* submit.
+// ============================
+// 🔍 GET: CHECK IF SUBMISSION EXISTS
+// ============================
 router.get("/check/:registrationNumber", async (req, res) => {
-      try {
-        const { registrationNumber } = req.params;
-        const existing = await Submission.findOne({ registrationNumber });
-        res.json({ exists: !!existing }); // Returns { "exists": true } or { "exists": false }
-      } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Server error" });
-      }
+  try {
+    const { registrationNumber } = req.params;
+    const existing = await Submission.findOne({ registrationNumber });
+    res.json({ exists: !!existing });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
+// ============================
+// 📤 GET: EXPORT ALL SUBMISSIONS TO EXCEL
+// ============================
+router.get("/export", async (req, res) => {
+  try {
+    const submissions = await Submission.find({}, "registrationNumber name Section").lean();
+
+    if (!submissions || submissions.length === 0) {
+      return res.status(404).json({ message: "No submissions found" });
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Submissions");
+
+    // Define columns
+    worksheet.columns = [
+      { header: "S.No", key: "sno", width: 8 },
+      { header: "Registration Number", key: "registrationNumber", width: 25 },
+      { header: "Name", key: "name", width: 25 },
+      { header: "Section", key: "Section", width: 15 },
+    ];
+
+    // Add rows
+    submissions.forEach((sub, index) => {
+      worksheet.addRow({
+        sno: index + 1,
+        registrationNumber: sub.registrationNumber,
+        name: sub.name,
+        Section: sub.Section || "N/A",
+        Year: sub.Year || "N/A",
+      });
+    });
+
+    // Format header
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).alignment = { horizontal: "center" };
+
+    // Set headers for download
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", "attachment; filename=submissions.xlsx");
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error("Error exporting Excel:", error);
+    res.status(500).json({ message: "Error generating Excel file", error: error.message });
+  }
+});
 
 export default router;
