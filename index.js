@@ -33,8 +33,6 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 import submissionsRoute from './routes/submissions.js';
 app.use('/api/submissions', submissionsRoute);
-
-// Default route (optional)
 app.get('/', (req, res) => {
   res.send('Server is up and running 🚀');
  
