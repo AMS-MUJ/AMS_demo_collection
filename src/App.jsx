@@ -18,6 +18,7 @@ function App() {
 function PhotoSubmission() {
   const [registrationNumber, setRegistrationNumber] = useState('');
   const [name, setName] = useState('');
+  const [branch, setBranch] = useState('');
   const [section, setSection] = useState('');
   const [academicYear, setAcademicYear] = useState('');
   const [photos, setPhotos] = useState([null, null, null]);
@@ -60,6 +61,7 @@ function PhotoSubmission() {
 
       const formData = new FormData();
       formData.append('name', name);
+      formData.append('branch', branch);
       formData.append('section', section);
       formData.append('academicYear', academicYear);
       formData.append('registrationNumber', registrationNumber);
@@ -124,21 +126,6 @@ function PhotoSubmission() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Section
-            </label>
-            <input
-              type="text"
-              placeholder="e.g., A or Section A"
-              value={section}
-              onChange={(e) => setSection(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-              focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Academic Year
             </label>
             <select
@@ -154,6 +141,36 @@ function PhotoSubmission() {
               <option value="3">3rd Year</option>
               <option value="4">4th Year</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Branch
+            </label>
+            <input
+              type="text"
+              placeholder="Enter your Branch"
+              value={branch}
+              onChange={(e) => setBranch(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+              focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Section
+            </label>
+            <input
+              type="text"
+              placeholder="Enter your Section"
+              value={section}
+              onChange={(e) => setSection(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+              focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              required
+            />
           </div>
 
 
@@ -193,8 +210,8 @@ function PhotoSubmission() {
           <label
             htmlFor="photo-capture"
             className={`flex items-center justify-center w-full px-4 py-3.5 border-2 rounded-xl cursor-pointer transition-colors ${isAcademicComplete
-                ? 'border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                : 'border-dashed border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-500 cursor-not-allowed'
+              ? 'border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+              : 'border-dashed border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-500 cursor-not-allowed'
               }`}
           >
             <Camera className="w-6 h-6 mr-2" />
@@ -262,10 +279,10 @@ function PhotoSubmission() {
       {message && (
         <div
           className={`p-3 rounded-lg text-center font-medium ${message.includes('✅')
-              ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
-              : message.includes('❌')
-                ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
-                : 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+            ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+            : message.includes('❌')
+              ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+              : 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
             }`}
         >
           {message}
