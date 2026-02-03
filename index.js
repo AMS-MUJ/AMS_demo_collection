@@ -8,7 +8,7 @@ import cors from 'cors';
 import { uploadOnCloudinary } from './utils/cloudinary.js';
 const app = express();
 
-const allowedOrigins = ["https://ams-sdc.netlify.app/"];
+const allowedOrigins = ["https://ams-sdc.netlify.app"];
 
 // Middleware
 app.use(
